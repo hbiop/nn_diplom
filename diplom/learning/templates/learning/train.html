@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h4>Обучение модели: {{ model.title }}</h4>
+        </div>
+        <div class="card-body">
+            <form method="post" id="training-form">
+                {% csrf_token %}
+                <div class="mb-3">
+                    {{ form.dataset.label_tag }}
+                    {{ form.dataset }}
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.target_column.label_tag }}
+                    {{ form.target_column }}
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col">
+                        {{ form.epochs.label_tag }}
+                        {{ form.epochs }}
+                    </div>
+                    <div class="col">
+                        {{ form.learning_rate.label_tag }}
+                        {{ form.learning_rate }}
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    Начать обучение
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('id_dataset').addEventListener('change', function() {
+    const form = document.getElementById('training-form');
+    const formData = new FormData(form);
+    
+    fetch(window.location.href, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.text())
+    .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newOptions = doc.getElementById('id_target_column').innerHTML;
+        document.getElementById('id_target_column').innerHTML = newOptions;
+    });
+});
+</script>
+{% endblock %}

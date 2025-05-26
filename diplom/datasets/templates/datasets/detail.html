@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4>{{ data_file.title }}</h4>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{{ data_file.description }}</p>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <strong>Тип файла:</strong> {{ data_file.get_file_type_display }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Размер:</strong> {{ data_file.get_file_size_mb }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Дата загрузки:</strong> {{ data_file.upload_date|date:"d.m.Y H:i" }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Путь к файлу:</strong> {{ data_file.file.path }}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            {% if columns and rows %}
+            <div class="mt-4">
+                <h5>Предпросмотр данных (первые 100 строк)</h5>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead class="thead-light">
+                            <tr>
+                                {% for column in columns %}
+                                <th>{{ column }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in rows %}
+                            <tr>
+                                {% for value in row.values %}
+                                <td>{{ value }}</td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Действия</h5>
+                    <a href="{% url 'dataset_list' %}" class="btn btn-outline-secondary btn-block">
+                        ← Назад к списку
+                    </a>
+                    <a href="{{ data_file.file.url }}" class="btn btn-success btn-block" download>
+                        Скачать исходный файл
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

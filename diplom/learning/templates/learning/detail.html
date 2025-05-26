@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>{{ session.title }}</h2>
+    <p>Дата создания: {{ session.creation_date|date:"d.m.Y H:i" }}</p>
+
+    <h3>Данные</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                {% for column in columns %}
+                <th>{{ column }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                {% for value in row.values %}
+                <td>{{ value }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>{{ model.title }}</h4>
+        </div>
+        <div class="card-body">
+            <p class="card-text">{{ model.description }}</p>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item">
+                    <strong>Дата создания:</strong>
+                    {{ model.creation_date|date:"d.m.Y H:i" }}
+                </li>
+                <li class="list-group-item">
+                    <strong>Параметры модели:</strong>
+                    <pre class="mt-2 p-2 bg-light rounded">{{ model.formatted_parameters }}</pre>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Действия</h5>
+                <a href="{% url 'session_list' %}" class="btn btn-outline-secondary btn-block mb-2">
+                    ← Назад к списку
+                </a>
+
+                <!-- Кнопка запуска обучения с обработкой через JavaScript -->
+                <button id="start-training-btn" class="btn btn-success btn-block"
+                        data-session-id="{{ session.id }}"
+                        data-csrf-token="{{ csrf_token }}">
+                    Обучить модель
+                </button>
+
+                <!-- Блок для отображения статуса -->
+                <div id="training-status" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const startBtn = document.getElementById('start-training-btn');
+    const statusDiv = document.getElementById('training-status');
+
+    startBtn.addEventListener('click', function() {
+        const sessionId = this.dataset.sessionId;
+        const csrfToken = this.dataset.csrfToken;
+
+        // Показываем индикатор загрузки
+        startBtn.disabled = true;
+        statusDiv.innerHTML = `
+            <div class="alert alert-info d-flex align-items-center">
+                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                Запуск обучения...
+            </div>
+        `;
+
+        // Отправляем AJAX запрос
+        fetch(`/start_training/${sessionId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'Training started in background') {
+                // Перенаправляем на страницу прогресса после успешного запуска
+                window.location.href = "{% url 'training_progress' session.id %}";
+            } else {
+                statusDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        Ошибка: ${data.message || 'Неизвестная ошибка'}
+                    </div>
+                `;
+                startBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            statusDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    Ошибка сети: ${error.message}
+                </div>
+            `;
+            startBtn.disabled = false;
+        });
+    });
+});
+</script>
+{% endblock %}

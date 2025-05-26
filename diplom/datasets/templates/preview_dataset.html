@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dataset-preview">
+    <h2>Предпросмотр: {{ object.name }}</h2>
+    
+    <div class="metadata">
+        <h4>Колонки:</h4>
+        <ul>
+            {% for col, dtype in object.columns_json.items %}
+                <li>{{ col }} ({{ dtype }})</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <h4>Первые 10 строк:</h4>
+    <table class="preview-table">
+        <thead>
+            <tr>
+                {% for col in object.columns_json.keys %}
+                    <th>{{ col }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in object.preview_json %}
+                <tr>
+                    {% for value in row.values %}
+                        <td>{{ value }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <form method="post" action="{% url 'finalize_dataset' %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>Выберите целевую колонку:
+                <select name="target_column" class="form-control">
+                    {% for col in object.columns_json.keys %}
+                        <option value="{{ col }}" 
+                            {% if col == object.target_column %}selected{% endif %}>
+                            {{ col }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </label>
+        </div>
+        <button type="submit" class="btn btn-success">Сохранить датасет</button>
+    </form>
+</div>
+{% endblock %}

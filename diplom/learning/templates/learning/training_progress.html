@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>Обучение модели: {{ session.title }}</h2>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>Прогресс обучения</h4>
+        </div>
+        <div class="card-body">
+            <!-- Индикатор прогресса -->
+            <div class="mb-3">
+                <div class="d-flex justify-content-between">
+                    <span>Статус: <strong id="training-status">{{ session.get_status_display }}</strong></span>
+                    <span id="progress-text">0%</span>
+                </div>
+                <div class="progress" style="height: 30px;">
+                    <div id="training-progress" class="progress-bar progress-bar-striped progress-bar-animated"
+                         role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- График метрик -->
+            <div class="mb-4">
+                <canvas id="metrics-chart" height="200"></canvas>
+            </div>
+
+            <!-- Логи обучения -->
+            <div class="card">
+                <div class="card-header">
+                    <h5>Логи обучения</h5>
+                </div>
+                <div class="card-body p-2">
+                    <pre id="training-logs" class="mb-0 p-2 bg-light rounded">{{ session.logs }}</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-3">
+        <a href="{% url 'session_detail' session.id %}" class="btn btn-primary" id="view-results-btn" style="display: none;">
+            Посмотреть результаты
+        </a>
+        <button id="cancel-training-btn" class="btn btn-danger" data-session-id="{{ session.id }}">
+            Отменить обучение
+        </button>
+    </div>
+</div>
+
+<!-- Подключаем Chart.js для графиков -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sessionId = {{ session.id }};
+    const progressBar = document.getElementById('training-progress');
+    const progressText = document.getElementById('progress-text');
+    const statusLabel = document.getElementById('training-status');
+    const logsElement = document.getElementById('training-logs');
+    const viewResultsBtn = document.getElementById('view-results-btn');
+    const cancelBtn = document.getElementById('cancel-training-btn');
+
+    // Инициализация графика
+    const ctx = document.getElementById('metrics-chart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            datasets: [
+                {
+                    label: 'Потери',
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                    tension: 0.1,
+                    data: []
+                },
+                {
+                    label: 'Точность',
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                    tension: 0.1,
+                    data: []
+                }
+            ]
+        },
+        options: {
+            scales: {
+                x: {
+                    title: { display: true, text: 'Эпоха' }
+                },
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Функция обновления данных
+    function updateTrainingProgress() {
+        fetch(`/api/training-progress/${sessionId}/`)
+            .then(response => response.json())
+            .then(data => {
+                // Обновляем прогресс бар
+                progressBar.style.width = `${data.progress}%`;
+                progressText.textContent = `${Math.round(data.progress)}%`;
+
+                // Обновляем статус
+                statusLabel.textContent = data.status === 'running' ? 'Обучение...' :
+                                        data.status === 'completed' ? 'Завершено' :
+                                        data.status === 'failed' ? 'Ошибка' : data.status;
+
+                // Обновляем логи
+                logsElement.textContent = data.logs;
+                logsElement.scrollTop = logsElement.scrollHeight;
+
+                // Обновляем график
+                if (data.epoch_history) {
+                    chart.data.labels = data.epoch_history.map(e => e.epoch_number);
+                    chart.data.datasets[0].data = data.epoch_history.map(e => e.loss);
+                    chart.data.datasets[1].data = data.epoch_history.map(e => e.accuracy);
+                    chart.update();
+                }
+
+                // Управление кнопками
+                if (data.status === 'completed' || data.status === 'failed') {
+                    progressBar.classList.remove('progress-bar-animated');
+                    viewResultsBtn.style.display = data.status === 'completed' ? 'inline-block' : 'none';
+                    cancelBtn.style.display = 'none';
+                    return; // Завершаем опрос
+                }
+
+                // Продолжаем опрос
+                setTimeout(updateTrainingProgress, 2000);
+            })
+            .catch(error => {
+                console.error('Error fetching progress:', error);
+                setTimeout(updateTrainingProgress, 5000);
+            });
+    }
+
+    // Обработчик отмены обучения
+    cancelBtn.addEventListener('click', function() {
+        if (confirm('Вы уверены, что хотите отменить обучение?')) {
+            fetch(`/api/cancel-training/${sessionId}/`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        statusLabel.textContent = 'Отменено';
+                        cancelBtn.style.display = 'none';
+                    }
+                });
+        }
+    });
+
+    // Начинаем опрос статуса
+    updateTrainingProgress();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <h2>Создание новой модели</h2>
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    {{ form.title.label_tag }}
+                    {{ form.title }}
+                </div>
+                <div class="mb-3">
+                    {{ form.description.label_tag }}
+                    {{ form.description }}
+                </div>
+                <div class="mb-3">
+                    {{ form.parameters.label_tag }}
+                    {{ form.parameters }}
+                    <small class="form-text text-muted">
+                        Пример формата: {"epochs": 10, "batch_size": 32}
+                    </small>
+                </div>
+                <button type="submit" class="btn btn-primary">Создать модель</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
