@@ -53,25 +53,7 @@ def create_session(request):
         form = SessionForm()  # Создаем пустую форму для GET-запроса
 
     return render(request, "learning/upload_session.html", {"form": form})
-    # if request.method == 'POST':
-    #     form = SessionForm(request.POST)
-    #     if form.is_valid():
-    #         session = TrainingSession.objects.create(
-    #             model=model,
-    #             dataset=form.cleaned_data['dataset'],
-    #             target_column=form.cleaned_data['target_column'],
-    #             epochs=form.cleaned_data['epochs'],
-    #             learning_rate=form.cleaned_data['learning_rate'],
-    #         )
-    #         train_model_task.delay(session.id)
-    #         return redirect('training_progress', session_id=session.id)
-    # else:
-    #     form = TrainingForm()
-    #
-    # return render(request, 'models/train.html', {
-    #     'model': model,
-    #     'form': form
-    # })
+
 
 
 def start_training_view(request, session_id):

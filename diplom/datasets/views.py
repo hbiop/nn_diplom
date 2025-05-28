@@ -1,5 +1,5 @@
 import pandas as pd
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from .forms import DataFileForm
 from .models import DataFile
@@ -30,6 +30,11 @@ def upload_dataset(request):
 
     return render(request, 'datasets/upload.html', {'form': form})
 
+
+def delete_file(request, id):
+    file = get_object_or_404(DataFile, pk=id)
+    file.delete()
+    return redirect('dataset_list')
 
 def dataset_detail(request, pk):
     data_file = DataFile.objects.get(pk=pk)

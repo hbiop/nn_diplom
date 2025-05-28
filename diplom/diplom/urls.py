@@ -25,6 +25,7 @@ urlpatterns = [
     path('upload/', datasets_views.upload_dataset, name='dataset_upload'),
     path('dataset/<int:pk>/', datasets_views.dataset_detail, name='dataset_detail'),
     path('datasets/', datasets_views.dataset_list, name='dataset_list'),
+    path('datasets/<int:id>/delete/', datasets_views.delete_file, name='delete_file'),
     path('neural_network', neural_network_views.model_list, name='model_list'),
     path('neural_network/create/', neural_network_views.model_create, name='model_create'),
     path('neural_network/<int:pk>/', neural_network_views.model_detail, name='model_detail'),

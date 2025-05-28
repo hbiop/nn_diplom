@@ -28,15 +28,17 @@ class TrainingThread(threading.Thread):
             # Загрузка данных
             df = pd.read_csv(session.dataset.file.path)
             # Инициализация и обучение препроцессора
+
             preprocessor = DataPreprocessor()
             last_column_name = df.columns[-1]
             #last_column = df[last_column_name]
-            X_train, X_test, y_train, y_test = preprocessor.preprocess_data(df, last_column_name)
-            session.save_preprocessor(preprocessor)
+            X_train, X_test, y_train, y_test = preprocessor.automatic_preprocess_data(df, last_column_name)
 
+            session.save_preprocessor(preprocessor)
+            print(type(X_train))
             # Инициализация нейронной сети
             nn = NeuralNetwork(input_size=X_train.shape[1])
-            print("start learning ggg")
+            print("pivot")
 
             for layer_config in session.model.parameters['layers']:
                 #print(**layer_config)
@@ -47,8 +49,10 @@ class TrainingThread(threading.Thread):
             best_weights = None
 
             for epoch in range(1, session.epochs + 1):
-                nn.train(X_train, y_train, learning_rate=session.learning_rate)
                 print(f"epoch {epoch}")
+                print(y_train)
+                nn.train(X_train, y_train, learning_rate=session.learning_rate)
+
                 # Расчет метрик
                 output, _ = nn.forward(X_test)
                 print(f"epoch {epoch}")
@@ -74,7 +78,7 @@ class TrainingThread(threading.Thread):
                 # Обновление прогресса
                 session.current_epoch = epoch
                 session.progress = (epoch / session.epochs) * 100
-                session.logs += f"Epoch {epoch}: loss={loss:.4f}, accuracy={accuracy:.4f}\n"
+                session.logs += f"Эпохи {epoch}: loss={loss:.4f}, accuracy={accuracy:.4f}\n"
                 session.save()
 
             # Сохранение лучшей версии модели
