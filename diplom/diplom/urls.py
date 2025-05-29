@@ -20,6 +20,7 @@ from django.urls import path
 from datasets import views as datasets_views
 from neural_network import views as neural_network_views
 from learning import views as learning_views
+from predict import views as predict_views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('upload/', datasets_views.upload_dataset, name='dataset_upload'),
@@ -30,12 +31,17 @@ urlpatterns = [
     path('neural_network/create/', neural_network_views.model_create, name='model_create'),
     path('neural_network/<int:pk>/', neural_network_views.model_detail, name='model_detail'),
 
-    #sessions
+    #learning
     path('sessions/', learning_views.sessions_list, name='session_list'),
     path('sessions/create', learning_views.create_session, name='create_session_list'),
     path('session_detail/<int:pk>/', learning_views.session_detail, name='session_detail'),
-path('start_training/<int:session_id>/', learning_views.start_training_view, name='start_training'),
+    path('start_training/<int:session_id>/', learning_views.start_training_view, name='start_training'),
     path('training/<int:session_id>/', learning_views.training_progress, name='training_progress'),
     path('api/training-progress/<int:session_id>/', learning_views.training_progress_api, name='training_progress_api'),
     path('api/cancel-training/<int:session_id>/', learning_views.cancel_training, name='cancel_training'),
+
+
+    #predictions
+    path('predictions/', predict_views.sessions_list, name='predict_sessions_list'),
+    path('predictions/create', predict_views.create_session, name='create_session')
 ]

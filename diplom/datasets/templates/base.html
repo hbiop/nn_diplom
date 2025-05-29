@@ -23,7 +23,10 @@
                             <a class="nav-link" href="{% url 'model_list' %}">Модели</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="/sessions" target="_blank">Сессии</a>
+                            <a class="nav-link" href="{% url 'session_list' %}">Обучение</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'predict_sessions_list' %}">Предсказание</a>
                         </li>
                     </ul>
                 </div>

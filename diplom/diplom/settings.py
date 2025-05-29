@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'datasets',
     'neural_network',
-    'learning'
+    'learning',
+    'predict'
 ]
 
 MIDDLEWARE = [

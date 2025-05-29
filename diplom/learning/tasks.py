@@ -81,7 +81,6 @@ class TrainingThread(threading.Thread):
                 session.logs += f"Эпохи {epoch}: loss={loss:.4f}, accuracy={accuracy:.4f}\n"
                 session.save()
 
-            # Сохранение лучшей версии модели
             if best_weights:
                 session.neural_network = best_weights
             session.status = 'completed'

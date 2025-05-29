@@ -48,9 +48,9 @@ def create_session(request):
         form = SessionForm(request.POST)
         if form.is_valid():
             training_session = form.save()
-            return redirect('success_url_name')  # Замените на ваше имя URL
+            return redirect('success_url_name')
     else:
-        form = SessionForm()  # Создаем пустую форму для GET-запроса
+        form = SessionForm()
 
     return render(request, "learning/upload_session.html", {"form": form})
 

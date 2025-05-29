@@ -9,7 +9,7 @@ from neural_network.models import MLModel
 class SessionForm(forms.ModelForm):
     class Meta:
         model = TrainingSession
-        fields = ['title', 'model', 'dataset', 'epochs', 'learning_rate']
+        fields = ['title', 'model', 'epochs', 'learning_rate']
     title = forms.CharField(max_length=255)
     model = forms.ModelChoiceField(
         queryset=MLModel.objects.all(),

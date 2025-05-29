@@ -30,16 +30,13 @@ class TrainingSession(models.Model):
     learning_rate = models.FloatField(default=0.01)
     creation_date = models.DateTimeField(default=timezone.now)
 
-    # Состояние обучения
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     current_epoch = models.IntegerField(default=0)
     progress = models.FloatField(default=0)
 
-    # Сериализованные модели
     preprocessor = models.BinaryField(null=True, blank=True)
     neural_network = models.BinaryField(null=True, blank=True)
 
-    # Метрики
     best_loss = models.FloatField(null=True, blank=True)
     final_accuracy = models.FloatField(null=True, blank=True)
     logs = models.TextField(blank=True)
@@ -91,6 +88,9 @@ class TrainingSession(models.Model):
             avg_loss=Avg('loss'),
             avg_accuracy=Avg('accuracy')
         )
+
+    def __str__(self):
+        return self.title
 
 
 class TrainingEpoch(models.Model):
