@@ -12,14 +12,12 @@ def upload_dataset(request):
             try:
                 data_file = form.save()
 
-                # Обработка файла с помощью pandas
                 file_path = data_file.file.path
                 if data_file.file_type == 'CSV':
                     df = pd.read_csv(file_path)
                 elif data_file.file_type == 'XLSX':
                     df = pd.read_excel(file_path)
 
-                # Здесь можно добавить дополнительную обработку данных
                 messages.success(request, 'Файл успешно загружен и обработан')
                 return redirect('dataset_detail', pk=data_file.pk)
 

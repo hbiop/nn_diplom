@@ -1,13 +1,18 @@
 import pickle
+import threading
 
 import pandas as pd
-from django.shortcuts import render, redirect
+from django.http import JsonResponse
+from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.http import require_GET
 
 from predict.models import PredictSession
 
 from predict.forms import PredictSessionForm
 
 from predict.models import PredictionResult
+
+from predict.tasks import PredictionThread
 
 
 # Create your views here.
@@ -47,3 +52,47 @@ def predict(request, session_id):
             'input_data': result.input_data,
             'output_data': result.prediction
         }
+
+
+def prediction_detail_view(request, pk):
+    print("here")
+    predict_session = get_object_or_404(PredictSession, pk=pk)
+
+    if predict_session.status == 'running':
+        print("here 2")
+        active_threads = [t for t in threading.enumerate() if
+                          isinstance(t, PredictionThread) and t.session.id == predict_session.id]
+        if not active_threads:
+            predict_session.refresh_from_db()
+            if predict_session.status == 'running':
+                predict_session.status = 'failed'
+                predict_session.logs = "Поток выполнения был прерван"
+                predict_session.save()
+
+    results = predict_session.results.all()[:50]
+    summary = predict_session.get_results_summary()
+
+    context = {
+        'object': predict_session,
+        'results': results,
+        'summary': summary,
+    }
+
+    return render(request, 'predictions/prediction_detail.html', context)
+
+
+@require_GET
+def check_prediction_status(request, pk):
+    """API endpoint для проверки статуса (используется AJAX)"""
+    predict_session = get_object_or_404(PredictSession, pk=pk)
+
+    # Проверяем активные потоки для этой сессии
+    active_threads = [t for t in threading.enumerate() if
+                      isinstance(t, PredictionThread) and t.session.id == predict_session.id]
+
+    return JsonResponse({
+        'status': predict_session.status,
+        'progress': predict_session.progress,
+        'is_active': len(active_threads) > 0,
+        'logs': predict_session.logs,
+    })

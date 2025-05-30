@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% if object.status == 'running' %}
+    // Функция для проверки статуса
+    function checkStatus() {
+        fetch("{% url 'check_prediction_status' pk=object.pk %}")
+            .then(response => response.json())
+            .then(data => {
+                // Обновляем прогресс
+                const progressBar = document.querySelector('.progress-bar');
+                if (progressBar) {
+                    progressBar.style.width = data.progress + '%';
+                    progressBar.textContent = data.progress + '%';
+                    progressBar.setAttribute('aria-valuenow', data.progress);
+                }
+
+                // Обновляем логи
+                const logsElement = document.getElementById('prediction-logs');
+                if (logsElement) {
+                    logsElement.textContent = data.logs;
+                }
+
+                // Если выполнение завершено, перезагружаем страницу
+                if (data.status !== 'running' || !data.is_active) {
+                    window.location.reload();
+                } else {
+                    // Продолжаем проверку каждые 3 секунды
+                    setTimeout(checkStatus, 3000);
+                }
+            });
+    }
+
+    // Запускаем проверку статуса
+    setTimeout(checkStatus, 3000);
+    {% endif %}
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h2>{{ object.title }}</h2>
+            <p class="mb-0">
+                <strong>Модель:</strong> {{ object.model.title }} |
+                <strong>Датасет:</strong> {{ object.dataset.title }} |
+                <strong>Статус:</strong>
+                <span id="prediction-status">{{ object.get_status_display }}</span>
+            </p>
+            <p class="mb-0">
+                <strong>Создано:</strong> {{ object.creation_date|date:"Y-m-d H:i" }}
+            </p>
+        </div>
+
+        <div class="card-body">
+            {% if object.status == 'completed' %}
+                <!-- Существующая логика для завершенных предсказаний -->
+                ...
+
+            {% elif object.status == 'failed' %}
+                <div class="alert alert-danger">
+                    <h4>Ошибка выполнения</h4>
+                    <pre id="prediction-logs">{{ object.logs }}</pre>
+                    <form method="post" action="{% url 'prediction_retry' pk=object.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-warning mt-2">
+                            <i class="fas fa-redo"></i> Попробовать снова
+                        </button>
+                    </form>
+                </div>
+
+            {% else %}
+                <div class="alert alert-info">
+                    <h4>Предсказание в процессе</h4>
+                    <p>Пожалуйста, подождите...</p>
+                    <div class="progress mt-3">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated"
+                             role="progressbar"
+                             style="width: {{ object.progress }}%"
+                             aria-valuenow="{{ object.progress }}"
+                             aria-valuemin="0"
+                             aria-valuemax="100">
+                            {{ object.progress|floatformat:0 }}%
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <h5>Лог выполнения:</h5>
+                        <pre id="prediction-logs">{{ object.logs }}</pre>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="card-footer text-muted">
+            <a href="{% url 'predict_sessions_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Вернуться к списку
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

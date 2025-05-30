@@ -48,7 +48,7 @@ def create_session(request):
         form = SessionForm(request.POST)
         if form.is_valid():
             training_session = form.save()
-            return redirect('success_url_name')
+            return redirect('session_list')
     else:
         form = SessionForm()
 

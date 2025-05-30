@@ -43,5 +43,6 @@ urlpatterns = [
 
     #predictions
     path('predictions/', predict_views.sessions_list, name='predict_sessions_list'),
-    path('predictions/create', predict_views.create_session, name='create_session')
+    path('predictions/create', predict_views.create_session, name='create_session'),
+    path('predictions/<int:pk>/', predict_views.prediction_detail_view, name='prediction_detail'),
 ]
