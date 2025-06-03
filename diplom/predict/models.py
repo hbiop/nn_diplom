@@ -17,7 +17,7 @@ class PredictSession(models.Model):
         ('completed', 'Завершено'),
         ('failed', 'Ошибка'),
     ]
-
+    progress = models.FloatField(default=0)
     title = models.CharField(max_length=255, default="Новая сессия предсказаний")
     dataset = models.ForeignKey(DataFile, on_delete=models.CASCADE)
     model = models.ForeignKey(TrainingSession, on_delete=models.CASCADE)

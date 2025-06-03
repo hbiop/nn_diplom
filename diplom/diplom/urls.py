@@ -21,6 +21,9 @@ from datasets import views as datasets_views
 from neural_network import views as neural_network_views
 from learning import views as learning_views
 from predict import views as predict_views
+
+from predict.views import PredictionSessionDetailView, start_prediction_view
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('upload/', datasets_views.upload_dataset, name='dataset_upload'),
@@ -44,5 +47,8 @@ urlpatterns = [
     #predictions
     path('predictions/', predict_views.sessions_list, name='predict_sessions_list'),
     path('predictions/create', predict_views.create_session, name='create_session'),
-    path('predictions/<int:pk>/', predict_views.prediction_detail_view, name='prediction_detail'),
+    path('predictions/<int:pk>/', PredictionSessionDetailView.as_view(), name='prediction_detail'),
+
+    path('predictions/<int:pk>/start/', start_prediction_view, name='start_prediction'),
+
 ]

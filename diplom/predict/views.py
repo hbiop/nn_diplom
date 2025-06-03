@@ -5,6 +5,7 @@ import pandas as pd
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_GET
+from django.views.generic import DetailView
 
 from predict.models import PredictSession
 
@@ -13,6 +14,8 @@ from predict.forms import PredictSessionForm
 from predict.models import PredictionResult
 
 from predict.tasks import PredictionThread
+
+from predict.tasks import start_prediction
 
 
 # Create your views here.
@@ -31,68 +34,42 @@ def create_session(request):
 
     return render(request, "predictions/upload_session.html", {"form": form})
 
-def predict(request, session_id):
-    session = PredictSession.objects.get(id=session_id)
-    if session.dataset.file_type == 'CSV':
-        df = pd.read_csv(session.dataset.file.path)
-    elif session.dataset.file_type == 'XLSX':
-        df = pd.read_excel(session.dataset.file.path)
-    preprocessor = pickle.load(session.model.preprocessor)
-    data = preprocessor.preprocess_data_for_predict(df)
-    neural_network = pickle.load(session.model.neural_network)
-    output = neural_network.predict(data)
-    prediction_result = PredictionResult.objects.create(
-            session=session,
-            input_data=data.tolist(),
-            prediction=output.tolist()
-        )
-    result = PredictionResult.objects.get(session=session.id)
-    context = {
-            'session': session,
-            'input_data': result.input_data,
-            'output_data': result.prediction
-        }
+
+class PredictionSessionDetailView(DetailView):
+    model = PredictSession
+    template_name = 'predictions/prediction_detail.html'
+    context_object_name = 'session'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        session = self.object
+
+        # Собираем статистику по результатам
+        if session.status == 'completed':
+            context['results_summary'] = session.get_results_summary()
+
+        # Форматируем прогресс для отображения
+        context['progress_percent'] = int(session.progress)
+        context['progress_width'] = f"{session.progress}%"
+
+        # Разбиваем логи на строки для лучшего отображения
+        context['logs_lines'] = session.logs.split('\n') if session.logs else []
+
+        return context
 
 
-def prediction_detail_view(request, pk):
-    print("here")
-    predict_session = get_object_or_404(PredictSession, pk=pk)
+def start_prediction_view(request, pk):
+    session = get_object_or_404(PredictSession, pk=pk)
 
-    if predict_session.status == 'running':
-        print("here 2")
-        active_threads = [t for t in threading.enumerate() if
-                          isinstance(t, PredictionThread) and t.session.id == predict_session.id]
-        if not active_threads:
-            predict_session.refresh_from_db()
-            if predict_session.status == 'running':
-                predict_session.status = 'failed'
-                predict_session.logs = "Поток выполнения был прерван"
-                predict_session.save()
-
-    results = predict_session.results.all()[:50]
-    summary = predict_session.get_results_summary()
-
-    context = {
-        'object': predict_session,
-        'results': results,
-        'summary': summary,
-    }
-
-    return render(request, 'predictions/prediction_detail.html', context)
-
-
-@require_GET
-def check_prediction_status(request, pk):
-    """API endpoint для проверки статуса (используется AJAX)"""
-    predict_session = get_object_or_404(PredictSession, pk=pk)
-
-    # Проверяем активные потоки для этой сессии
-    active_threads = [t for t in threading.enumerate() if
-                      isinstance(t, PredictionThread) and t.session.id == predict_session.id]
-
-    return JsonResponse({
-        'status': predict_session.status,
-        'progress': predict_session.progress,
-        'is_active': len(active_threads) > 0,
-        'logs': predict_session.logs,
-    })
+    # Запускаем только если сессия не выполняется
+    if session.status != 'running':
+        start_prediction(session.id)
+        return JsonResponse({
+            'status': 'started',
+            'message': f'Предсказание для сессии "{session.title}" запущено'
+        })
+    else:
+        return JsonResponse({
+            'status': 'already_running',
+            'message': 'Предсказание уже выполняется'
+        })
