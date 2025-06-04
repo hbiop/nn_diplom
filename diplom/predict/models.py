@@ -84,9 +84,15 @@ class PredictSession(models.Model):
 
     def get_results_summary(self):
         from django.db.models import Count
-        return self.results.values('prediction__class').annotate(
+        total = self.results.count()
+        summary = list(self.results.values('prediction__class').annotate(
             count=Count('id')
-        ).order_by('-count')
+        ).order_by('-count'))
+
+        for item in summary:
+            item['percent'] = item['count'] / total * 100 if total > 0 else 0
+
+        return summary
 
     def __str__(self):
         return f"{self.title} ({self.creation_date.strftime('%Y-%m-%d')})"
