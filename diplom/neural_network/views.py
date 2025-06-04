@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from .models import MLModel
-from .forms import MLModelForm
+from .forms import MLModelForm, LayerForm
 import json
 
 
@@ -13,23 +13,48 @@ def model_list(request):
 def model_create(request):
     if request.method == 'POST':
         form = MLModelForm(request.POST)
-        try:
-            json.loads(request.POST['parameters'])
-            if form.is_valid():
-                form.save()
-                messages.success(request, 'Модель успешно создана')
-                return redirect('model_list')
+        layers = []
+        layers_valid = True
+
+        # Собираем данные о слоях
+        i = 0
+        while True:
+            prefix = f'layer_{i}'
+            layer_form = LayerForm(request.POST, prefix=prefix)
+            if not any(f'{prefix}-{field}' in request.POST for field in ['units', 'activation']):
+                break
+            if layer_form.is_valid():
+                layers.append({
+                    'size': layer_form.cleaned_data['units'],
+                    'activation': layer_form.cleaned_data['activation']
+                })
             else:
-                messages.error(request, form.errors)
-        except json.JSONDecodeError as e:
-            print(f"error {e}")
-            messages.error(request, 'Ошибка в формате JSON параметров')
-        except Exception as e:
-            messages.error(request, f'Произошла ошибка: {str(e)}')
+                layers_valid = False
+            i += 1
+
+        if form.is_valid() and layers_valid and layers:
+            # Сохраняем модель с JSON параметрами
+            ml_model = form.save(commit=False)
+            ml_model.parameters = {'layers': layers}
+            ml_model.save()
+
+            messages.success(request, 'Модель успешно создана')
+            return redirect('model_list')
+        else:
+            if not layers:
+                messages.error(request, 'Добавьте хотя бы один слой')
+            elif not layers_valid:
+                messages.error(request, 'Проверьте параметры слоёв')
+            else:
+                messages.error(request, 'Пожалуйста, исправьте ошибки в форме')
     else:
         form = MLModelForm()
+        initial_layer = LayerForm(prefix='layer_0')
 
-    return render(request, 'models/create.html', {'form': form})
+    return render(request, 'models/create.html', {
+        'form': form,
+        'initial_layer': initial_layer,
+    })
 
 
 def model_detail(request, pk):

@@ -5,26 +5,106 @@
     <div class="row">
         <div class="col-md-8">
             <h2>Создание новой модели</h2>
-            <form method="post">
+            <form method="post" id="model-form">
                 {% csrf_token %}
+
                 <div class="mb-3">
                     {{ form.title.label_tag }}
                     {{ form.title }}
+                    {% if form.title.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.title.errors }}
+                        </div>
+                    {% endif %}
                 </div>
+
                 <div class="mb-3">
                     {{ form.description.label_tag }}
                     {{ form.description }}
                 </div>
-                <div class="mb-3">
-                    {{ form.parameters.label_tag }}
-                    {{ form.parameters }}
-                    <small class="form-text text-muted">
-                        Пример формата: {"epochs": 10, "batch_size": 32}
-                    </small>
+
+                <h4>Архитектура нейронной сети</h4>
+                <div id="layers-container">
+                    <div class="layer mb-3 p-3 border rounded position-relative">
+                        {{ initial_layer.units.label_tag }}
+                        {{ initial_layer.units }}
+
+                        {{ initial_layer.activation.label_tag }}
+                        {{ initial_layer.activation }}
+
+                        <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 remove-layer">
+                            &times;
+                        </button>
+                    </div>
                 </div>
-                <button type="submit" class="btn btn-primary">Создать модель</button>
+
+                <button type="button" id="add-layer" class="btn btn-secondary mb-3">
+                    Добавить слой
+                </button>
+
+                <div class="mb-3">
+                    <button type="submit" class="btn btn-primary">Создать модель</button>
+                </div>
             </form>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('layers-container');
+    let layerCount = 1;
+
+    // Добавление нового слоя
+    document.getElementById('add-layer').addEventListener('click', function() {
+        const newLayer = document.createElement('div');
+        newLayer.className = 'layer mb-3 p-3 border rounded position-relative';
+        newLayer.innerHTML = `
+            <label for="id_layer_${layerCount}-units">Количество нейронов:</label>
+            <input type="number" name="layer_${layerCount}-units" min="1"
+                   class="form-control" required id="id_layer_${layerCount}-units">
+
+            <label for="id_layer_${layerCount}-activation">Функция активации:</label>
+            <select name="layer_${layerCount}-activation" class="form-select"
+                    id="id_layer_${layerCount}-activation">
+                <option value="relu">ReLU</option>
+                <option value="sigmoid">Sigmoid</option>
+                <option value="tanh">Tanh</option>
+                <option value="softmax">Softmax</option>
+                <option value="linear">Linear</option>
+            </select>
+
+            <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 remove-layer">
+                &times;
+            </button>
+        `;
+        container.appendChild(newLayer);
+        layerCount++;
+    });
+
+    // Удаление слоя (делегирование событий)
+    container.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-layer')) {
+            // Не позволяем удалить последний слой
+            if (container.children.length > 1) {
+                e.target.closest('.layer').remove();
+            } else {
+                alert('Должен остаться хотя бы один слой!');
+            }
+        }
+    });
+});
+</script>
+
+<style>
+.layer {
+    background-color: #f8f9fa;
+}
+.remove-layer {
+    width: 25px;
+    height: 25px;
+    padding: 0;
+    line-height: 1;
+}
+</style>
 {% endblock %}
