@@ -21,7 +21,8 @@ from datasets import views as datasets_views
 from neural_network import views as neural_network_views
 from learning import views as learning_views
 from predict import views as predict_views
-
+from django.conf import settings
+from django.conf.urls.static import static
 from predict.views import PredictionSessionDetailView, start_prediction_view
 
 urlpatterns = [
@@ -51,4 +52,4 @@ urlpatterns = [
 
     path('predictions/<int:pk>/start/', start_prediction_view, name='start_prediction'),
 
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

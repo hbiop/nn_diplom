@@ -16,13 +16,17 @@ def model_create(request):
         layers = []
         layers_valid = True
 
-        # Собираем данные о слоях
-        i = 0
-        while True:
+        # Собираем данные о слоях (теперь порядок не важен)
+        layer_fields = [k for k in request.POST if k.startswith('layer_') and '-units' in k]
+        layer_indices = sorted({int(k.split('_')[1].split('-')[0]) for k in layer_fields})
+
+        for i in layer_indices:
             prefix = f'layer_{i}'
-            layer_form = LayerForm(request.POST, prefix=prefix)
-            if not any(f'{prefix}-{field}' in request.POST for field in ['units', 'activation']):
-                break
+            layer_form = LayerForm({
+                f'{prefix}-units': request.POST.get(f'{prefix}-units'),
+                f'{prefix}-activation': request.POST.get(f'{prefix}-activation')
+            }, prefix=prefix)
+
             if layer_form.is_valid():
                 layers.append({
                     'size': layer_form.cleaned_data['units'],
@@ -30,10 +34,8 @@ def model_create(request):
                 })
             else:
                 layers_valid = False
-            i += 1
 
         if form.is_valid() and layers_valid and layers:
-            # Сохраняем модель с JSON параметрами
             ml_model = form.save(commit=False)
             ml_model.parameters = {'layers': layers}
             ml_model.save()

@@ -55,6 +55,28 @@ document.addEventListener('DOMContentLoaded', function() {
     const container = document.getElementById('layers-container');
     let layerCount = 1;
 
+    // Функция для переиндексации всех слоев
+    function reindexLayers() {
+        const layers = container.querySelectorAll('.layer');
+        layers.forEach((layer, index) => {
+            // Обновляем имена полей
+            const inputs = layer.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                const name = input.name.replace(/layer_\d+/, `layer_${index}`);
+                input.name = name;
+                input.id = `id_${name}`;
+            });
+
+            // Обновляем labels
+            const labels = layer.querySelectorAll('label');
+            labels.forEach(label => {
+                const newFor = label.htmlFor.replace(/layer_\d+/, `layer_${index}`);
+                label.htmlFor = newFor;
+            });
+        });
+        layerCount = layers.length;
+    }
+
     // Добавление нового слоя
     document.getElementById('add-layer').addEventListener('click', function() {
         const newLayer = document.createElement('div');
@@ -88,6 +110,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Не позволяем удалить последний слой
             if (container.children.length > 1) {
                 e.target.closest('.layer').remove();
+                reindexLayers(); // Переиндексируем оставшиеся слои
             } else {
                 alert('Должен остаться хотя бы один слой!');
             }
