@@ -40,7 +40,7 @@ class TrainingThread(threading.Thread):
             nn = NeuralNetwork(input_size=X_train.shape[1])
             print("pivot")
 
-            for layer_config in session.model.parameters['layer']:
+            for layer_config in session.model.parameters['layers']:
                 #print(**layer_config)
                 nn.add_layer(**layer_config)
 
