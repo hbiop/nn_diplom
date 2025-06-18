@@ -1,4 +1,5 @@
 import pandas as pd
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from .forms import DataFileForm
@@ -11,13 +12,13 @@ def upload_dataset(request):
         if form.is_valid():
             try:
                 data_file = form.save()
-
+                data_file.user = request.user
                 file_path = data_file.file.path
                 if data_file.file_type == 'CSV':
                     df = pd.read_csv(file_path)
                 elif data_file.file_type == 'XLSX':
                     df = pd.read_excel(file_path)
-
+                data_file.save()
                 messages.success(request, 'Файл успешно загружен и обработан')
                 return redirect('dataset_detail', pk=data_file.pk)
 
@@ -54,6 +55,7 @@ def dataset_detail(request, pk):
 
     return render(request, 'datasets/detail.html', context)
 
+@login_required
 def dataset_list(request):
-    datasets = DataFile.objects.all().order_by('-upload_date')
+    datasets = DataFile.objects.filter(user=request.user).order_by('-upload_date')
     return render(request, 'datasets/list.html', {'datasets': datasets})

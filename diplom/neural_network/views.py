@@ -1,5 +1,6 @@
 import time
 
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -7,7 +8,7 @@ from .models import MLModel
 from .forms import MLModelForm, LayerForm
 import json
 
-
+@login_required
 def model_list(request):
     models = MLModel.objects.all().order_by('-creation_date')
     return render(request, 'models/list.html', {'models': models})

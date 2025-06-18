@@ -24,9 +24,9 @@ from predict import views as predict_views
 from django.conf import settings
 from django.conf.urls.static import static
 from predict.views import PredictionSessionDetailView, start_prediction_view
-
+from accounts import views as account_views
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    #path('admin/', admin.site.urls),
     path('upload/', datasets_views.upload_dataset, name='dataset_upload'),
     path('dataset/<int:pk>/', datasets_views.dataset_detail, name='dataset_detail'),
     path('datasets/', datasets_views.dataset_list, name='dataset_list'),
@@ -49,7 +49,11 @@ urlpatterns = [
     path('predictions/', predict_views.sessions_list, name='predict_sessions_list'),
     path('predictions/create', predict_views.create_session, name='create_session'),
     path('predictions/<int:pk>/', PredictionSessionDetailView.as_view(), name='prediction_detail'),
-
     path('predictions/<int:pk>/start/', start_prediction_view, name='start_prediction'),
+
+    #accounts
+    path('register/', account_views.register_view, name='register'),
+    path('login/', account_views.login_view, name='login'),
+    path('logout/', account_views.logout_view, name='logout'),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

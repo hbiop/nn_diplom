@@ -9,10 +9,12 @@ from datasets.models import DataFile
 from django.urls import reverse
 from neural_network.models import MLModel
 
+
 import pickle
 import base64
 from django.db import models
 from django.utils import timezone
+from django.conf import settings
 
 
 class TrainingSession(models.Model):
@@ -24,6 +26,12 @@ class TrainingSession(models.Model):
     ]
 
     title = models.CharField(max_length=255, default="")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='learning',
+        default=1
+    )
     model = models.ForeignKey(MLModel, on_delete=models.CASCADE)
     dataset = models.ForeignKey(DataFile, on_delete=models.CASCADE)
     epochs = models.IntegerField(default=100)

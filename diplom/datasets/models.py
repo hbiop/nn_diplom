@@ -3,13 +3,19 @@ import os
 
 from django.db import models
 from django.urls import reverse
-
+from django.conf import settings
 
 # Create your models here.
 class DataFile(models.Model):
     FILE_TYPES = (
         ('CSV', 'CSV'),
         ('XLSX', 'Excel'),
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='datasets',
+        default=1
     )
 
     title = models.CharField(max_length=255, verbose_name="Название набора")

@@ -1,5 +1,6 @@
 import pandas as pd
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -11,9 +12,9 @@ from neural_network.models import MLModel
 from .models import TrainingSession
 from datasets.models import DataFile
 
-
+@login_required
 def sessions_list(request):
-    sessions = TrainingSession.objects.all().order_by('-creation_date')
+    sessions = TrainingSession.objects.filter(user=request.user).order_by('-creation_date')
     return render(request, 'learning/list.html', {'sessions': sessions})
 
 

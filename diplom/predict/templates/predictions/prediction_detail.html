@@ -50,10 +50,11 @@
                 <div class="card-body">
                     <div class="d-grid gap-2">
                         {% if session.status == 'pending' %}
-                            <a href="{% url 'start_prediction' session.id %}"
-                               class="btn btn-success btn-lg">
-                               Запустить предсказание
-                            </a>
+                            <button id="start-prediction-btn"
+                                    class="btn btn-success btn-lg"
+                                    data-url="{% url 'start_prediction' pk=session.id %}">
+                                Запустить предсказание
+                            </button>
                         {% endif %}
 
                         {% if session.status == 'completed' and session.results_file %}
@@ -64,10 +65,10 @@
                         {% endif %}
 
                         {% if session.status == 'failed' %}
-                            <a href="{% url 'start_prediction' session.id %}"
-                               class="btn btn-warning btn-lg">
-                               Повторить попытку
-                            </a>
+                            <button class="btn btn-warning btn-lg"
+                                    data-url="{% url 'start_prediction' pk=session.id %}">
+                                Повторить попытку
+                            </button>
                         {% endif %}
                     </div>
                 </div>
@@ -89,7 +90,7 @@
         </div>
     </div>
 
-    <!-- Результаты (если есть) -->
+    <!-- Результаты -->
     {% if session.status == 'completed' %}
     <div class="card">
         <div class="card-header">Сводка результатов</div>
@@ -117,8 +118,71 @@
     {% endif %}
 </div>
 
-<!-- Автообновление страницы для активных сессий -->
-{% if session.status == 'pending' or session.status == 'running' %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Обработчик для кнопки запуска
+    const startBtn = document.getElementById('start-prediction-btn');
+
+    // Общая функция для обработки кнопок запуска/повтора
+    function handlePredictionButton(btn) {
+        if (!btn) return;
+
+        btn.addEventListener('click', function() {
+            const url = this.getAttribute('data-url');
+            const originalText = this.innerHTML;
+
+            // Блокируем кнопку и показываем индикатор
+            this.disabled = true;
+            this.innerHTML = `
+                <span class="spinner-border spinner-border-sm"
+                      role="status"
+                      aria-hidden="true">
+                </span> Запуск...
+            `;
+
+            // Отправляем AJAX-запрос
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Accept': 'application/json',
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Успешный запуск - обновляем страницу через 3 сек
+                    setTimeout(() => location.reload(), 3000);
+                } else {
+                    // Восстанавливаем кнопку при ошибке
+                    this.disabled = false;
+                    this.innerHTML = originalText;
+                    alert('Ошибка запуска: ' + response.statusText);
+                }
+            })
+            .catch(error => {
+                this.disabled = false;
+                this.innerHTML = originalText;
+                console.error('Ошибка сети:', error);
+                alert('Сетевая ошибка при запуске');
+            });
+        });
+    }
+
+    // Обрабатываем основную кнопку запуска
+    handlePredictionButton(startBtn);
+
+    // Обрабатываем кнопку повтора (если есть)
+    const retryBtn = document.querySelector('[data-url]'); // Любая кнопка с data-url
+    if (retryBtn && retryBtn !== startBtn) {
+        handlePredictionButton(retryBtn);
+    }
+
+    // Автообновление страницы для активных сессий
+    {% if session.status == 'pending' or session.status == 'running' %}
+    setInterval(() => location.reload(), 5000);
+    {% endif %}
+});
+</script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Обновляем страницу каждые 5 секунд
@@ -127,5 +191,4 @@
         }, 5000);
     });
 </script>
-{% endif %}
 {% endblock %}

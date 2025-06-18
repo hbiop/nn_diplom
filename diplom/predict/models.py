@@ -7,6 +7,7 @@ from django.urls import reverse
 
 from learning.models import TrainingSession
 from django.utils import timezone
+from django.conf import settings
 
 # Create your models here.
 
@@ -17,6 +18,12 @@ class PredictSession(models.Model):
         ('completed', 'Завершено'),
         ('failed', 'Ошибка'),
     ]
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='predictions',
+        default=1
+    )
     progress = models.FloatField(default=0)
     title = models.CharField(max_length=255, default="Новая сессия предсказаний")
     dataset = models.ForeignKey(DataFile, on_delete=models.CASCADE)

@@ -2,6 +2,7 @@ import pickle
 import threading
 
 import pandas as pd
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_GET
@@ -18,7 +19,7 @@ from predict.tasks import PredictionThread
 from predict.tasks import start_prediction
 
 
-# Create your views here.
+@login_required
 def sessions_list(request):
     sessions = PredictSession.objects.all().order_by('-creation_date')
     return render(request, 'predictions/list.html', {'sessions': sessions})
