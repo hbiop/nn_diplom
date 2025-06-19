@@ -10,7 +10,7 @@ import json
 
 @login_required
 def model_list(request):
-    models = MLModel.objects.all().order_by('-creation_date')
+    models = MLModel.objects.filter(user=request.user).order_by('-creation_date')
     return render(request, 'models/list.html', {'models': models})
 
 
@@ -20,7 +20,6 @@ def model_create(request):
         layers = []
         layers_valid = True
 
-        # Собираем данные о слоях (теперь порядок не важен)
         layer_fields = [k for k in request.POST if k.startswith('layer_') and '-units' in k]
         layer_indices = sorted({int(k.split('_')[1].split('-')[0]) for k in layer_fields})
 
@@ -42,6 +41,7 @@ def model_create(request):
         if form.is_valid() and layers_valid and layers:
             ml_model = form.save(commit=False)
             ml_model.parameters = {'layers': layers}
+            ml_model.user = request.user
             ml_model.save()
 
             messages.success(request, 'Модель успешно создана')
@@ -74,11 +74,8 @@ def model_train(request, pk):
     model = get_object_or_404(MLModel, pk=pk)
 
     if request.method == 'POST':
-        # Начало обучения
         model.status = 'training'
         model.save()
-
-        # Запуск обучения в отдельном потоке (упрощенная версия)
         from threading import Thread
         Thread(target=train_model, args=(model,)).start()
 
@@ -87,27 +84,25 @@ def model_train(request, pk):
     return render(request, 'models/train.html', {'model': model})
 
 
-def train_model(model):
-    try:
-        # Имитация процесса обучения
-        start_time = time.time()
-
-        # Здесь должна быть реальная логика обучения
-        for epoch in range(1, 6):
-            time.sleep(2)  # Имитация обучения
-            model.training_log = f"Epoch {epoch}/5 completed\n"
-            model.save()
-
-        model.accuracy = 0.92  # Пример метрики
-        model.training_time = time.time() - start_time
-        model.status = 'completed'
-        model.training_log += "\nОбучение успешно завершено!"
-
-    except Exception as e:
-        model.status = 'failed'
-        model.training_log = f"Ошибка: {str(e)}"
-
-    model.save()
+# def train_model(model):
+#     try:
+#         start_time = time.time()
+#
+#         for epoch in range(1, 6):
+#             time.sleep(2)  # Имитация обучения
+#             model.training_log = f"Epoch {epoch}/5 completed\n"
+#             model.save()
+#
+#         model.accuracy = 0.92  # Пример метрики
+#         model.training_time = time.time() - start_time
+#         model.status = 'completed'
+#         model.training_log += "\nОбучение успешно завершено!"
+#
+#     except Exception as e:
+#         model.status = 'failed'
+#         model.training_log = f"Ошибка: {str(e)}"
+#
+#     model.save()
 
 
 def training_progress(request, pk):

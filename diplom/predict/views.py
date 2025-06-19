@@ -21,7 +21,7 @@ from predict.tasks import start_prediction
 
 @login_required
 def sessions_list(request):
-    sessions = PredictSession.objects.all().order_by('-creation_date')
+    sessions = PredictSession.objects.filter(user=request.user).order_by('-creation_date')
     return render(request, 'predictions/list.html', {'sessions': sessions})
 
 def create_session(request):
@@ -29,6 +29,8 @@ def create_session(request):
         form = PredictSessionForm(request.POST)
         if form.is_valid():
             training_session = form.save()
+            training_session.user = request.user
+            training_session.save()
             return redirect('predict_sessions_list')
     else:
         form = PredictSessionForm()

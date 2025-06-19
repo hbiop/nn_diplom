@@ -1,14 +1,61 @@
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm, UserChangeForm
 from .models import CustomUser
-
-class RegisterForm(UserCreationForm):
-    password1 = forms.CharField(label='Password', widget=forms.PasswordInput)
-    password2 = forms.CharField(label='Confirm Password', widget=forms.PasswordInput)
-
-    class Meta:
-        model = CustomUser
-        fields = ('email', 'first_name', 'last_name', 'patronymic', 'password1', 'password2')
 
 class LoginForm(AuthenticationForm):
     username = forms.EmailField(label='Email')
+
+from django import forms
+from django.contrib.auth.forms import UserCreationForm
+from .models import CustomUser
+
+
+class CustomUserForm(UserChangeForm):
+    password = None
+    first_name = forms.CharField(
+        label="Имя",
+        max_length=30,
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    last_name = forms.CharField(
+        label="Фамилия",
+        max_length=30,
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    patronymic = forms.CharField(
+        label="Отчество",
+        max_length=30,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    email = forms.EmailField(
+        label="Email",
+        required=True,
+        widget=forms.EmailInput(attrs={'class': 'form-control'})
+    )
+    is_staff = forms.BooleanField(
+        label="Персонал",
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+    is_superuser = forms.BooleanField(
+        label="Администратор",
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+    is_active = forms.BooleanField(
+        label="Активен",
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+
+    class Meta:
+        model = CustomUser
+        fields = ('email', 'first_name', 'last_name', 'patronymic', 'is_staff', 'is_superuser', 'is_active')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:  # Если это редактирование существующего пользователя
+            self.fields['email'].widget.attrs['readonly'] = True  # Email нельзя менять после создания

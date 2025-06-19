@@ -32,7 +32,7 @@ ALLOWED_HOSTS = []
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
 INSTALLED_APPS = [
-    #'django.contrib.admin',
+    'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'predict',
     'accounts'
 ]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

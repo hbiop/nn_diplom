@@ -59,3 +59,7 @@ def dataset_detail(request, pk):
 def dataset_list(request):
     datasets = DataFile.objects.filter(user=request.user).order_by('-upload_date')
     return render(request, 'datasets/list.html', {'datasets': datasets})
+
+
+def redirect_to_dataset_list(request):
+    return redirect('login/')

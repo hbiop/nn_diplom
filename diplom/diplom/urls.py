@@ -25,8 +25,15 @@ from django.conf import settings
 from django.conf.urls.static import static
 from predict.views import PredictionSessionDetailView, start_prediction_view
 from accounts import views as account_views
+
 urlpatterns = [
-    #path('admin/', admin.site.urls),
+    path('', datasets_views.redirect_to_dataset_list),
+    path('user_list/', account_views.users_list, name='user_list'),
+    path('users/add/', account_views.user_form, name='add_user'),
+    path('users/<int:user_id>/edit/', account_views.user_form, name='edit_user'),
+    path('user_detail/<int:pk>/', account_views.user_detail, name='user_detail'),
+    #path('admin/register/', account_views.admin_register_view, name='admin_register'),
+    path('admin/', admin.site.urls, name='admin'),
     path('upload/', datasets_views.upload_dataset, name='dataset_upload'),
     path('dataset/<int:pk>/', datasets_views.dataset_detail, name='dataset_detail'),
     path('datasets/', datasets_views.dataset_list, name='dataset_list'),
@@ -52,7 +59,7 @@ urlpatterns = [
     path('predictions/<int:pk>/start/', start_prediction_view, name='start_prediction'),
 
     #accounts
-    path('register/', account_views.register_view, name='register'),
+    #path('register/', account_views.register_view, name='register'),
     path('login/', account_views.login_view, name='login'),
     path('logout/', account_views.logout_view, name='logout'),
 
