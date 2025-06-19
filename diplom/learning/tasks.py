@@ -26,7 +26,10 @@ class TrainingThread(threading.Thread):
             session.save()
             print("data loading")
             # Загрузка данных
-            df = pd.read_csv(session.dataset.file.path)
+            if session.dataset.file_type == 'CSV':
+                df = pd.read_csv(session.dataset.file.path)
+            elif session.dataset.file_type == 'XLSX':
+                df = pd.read_excel(session.dataset.file.path)
             # Инициализация и обучение препроцессора
 
             preprocessor = DataPreprocessor()

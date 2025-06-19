@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4>{{ custom_user.get_full_name }}</h4>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <strong>Email:</strong> {{ custom_user.email }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Фамилия:</strong> {{ custom_user.last_name }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Имя:</strong> {{ custom_user.first_name }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Отчество:</strong> {{ custom_user.patronymic|default:"Не указано" }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Дата регистрации:</strong> {{ custom_user.date_joined|date:"d.m.Y H:i" }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Статус:</strong>
+                            {% if custom_user.is_superuser %}
+                                <span class="badge badge-danger">Администратор</span>
+                            {% elif custom_user.is_staff %}
+                                <span class="badge badge-warning">Персонал</span>
+                            {% else %}
+                                <span class="badge badge-success">Пользователь</span>
+                            {% endif %}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Активен:</strong>
+                            {% if custom_user.is_active %}
+                                <span class="badge badge-success">Да</span>
+                            {% else %}
+                                <span class="badge badge-secondary">Нет</span>
+                            {% endif %}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Последний вход:</strong> 
+                            {% if custom_user.last_login %}
+                                {{ custom_user.last_login|date:"d.m.Y H:i" }}
+                            {% else %}
+                                Никогда
+                            {% endif %}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            {% if user.is_staff and custom_user.datasets.all %}
+            <div class="mt-4">
+                <h5>Наборы данных пользователя</h5>
+                <div class="list-group">
+                    {% for dataset in custom_user.datasets.all %}
+                    <a href="{{ dataset.get_absolute_url }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ dataset.title }}</h6>
+                            <small>{{ dataset.upload_date|date:"d.m.Y H:i" }}</small>
+                        </div>
+                        <p class="mb-1">{{ dataset.description|truncatechars:60 }}</p>
+                        <small>{{ dataset.get_file_type_display }} | {{ dataset.get_file_size_mb }}</small>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Действия</h5>
+                    <a href="{% url 'user_list' %}" class="btn btn-outline-secondary btn-block mb-2">
+                        ← Назад к списку
+                    </a>
+                    
+                    {% if request.user.is_staff %}
+                    <a href="{% url 'edit_user' user.id %}" class="btn btn-warning btn-sm">
+                        Редактировать
+                    </a>
+                    {% endif %}
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

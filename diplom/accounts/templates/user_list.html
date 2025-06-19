@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <h2>Список пользователей</h2>
+            <div class="list-group">
+                {% for user in users %}
+                <a href="{{ user.get_absolute_url }}" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">{{ user.get_full_name }}</h5>
+                        <small>Зарегистрирован: {{ user.date_joined|date:"d.m.Y H:i" }}</small>
+                    </div>
+                    <p class="mb-1">Email: {{ user.email }}</p>
+                    <small>
+                        Статус: 
+                        {% if user.is_superuser %}Администратор{% elif user.is_staff %}Персонал{% else %}Пользователь{% endif %} | 
+                        Активен: {% if user.is_active %}Да{% else %}Нет{% endif %}
+                    </small>
+                </a>
+                {% empty %}
+                <div class="alert alert-info">Нет зарегистрированных пользователей</div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Действия</h5>
+                    {% if request.user.is_staff %}
+                    <a href="{% url 'add_user' %}" class="btn btn-primary btn-block mb-2">
+                        Добавить нового пользователя
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
