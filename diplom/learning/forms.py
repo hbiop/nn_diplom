@@ -22,4 +22,8 @@ class SessionForm(forms.ModelForm):
         empty_label="Выберите модель"
     )
     epochs = forms.IntegerField(label="Количество эпох",min_value=1, max_value=10000)
-    learning_rate = forms.DecimalField(label="Скорость обучения", min_value=0.01, max_value=1)
+    learning_rate = forms.FloatField(
+        label="Скорость обучения",
+        min_value=0.01,
+        max_value=1
+    )

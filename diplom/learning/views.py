@@ -17,7 +17,7 @@ def sessions_list(request):
     sessions = TrainingSession.objects.filter(user=request.user).order_by('-creation_date')
     return render(request, 'learning/list.html', {'sessions': sessions})
 
-
+@login_required
 def session_detail(request, pk):
     session = get_object_or_404(TrainingSession, pk=pk)
     data_file = session.dataset
@@ -44,11 +44,14 @@ def session_detail(request, pk):
 
     return render(request, 'learning/detail.html', context)
 
+@login_required
 def create_session(request):
     if request.method == 'POST':
         form = SessionForm(request.POST)
         if form.is_valid():
             training_session = form.save()
+            training_session.user = request.user
+            training_session.save()
             return redirect('session_list')
     else:
         form = SessionForm()
