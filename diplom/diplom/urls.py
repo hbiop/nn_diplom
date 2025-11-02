@@ -17,12 +17,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
-from neural_network import views as neural_network_views
 
 from django.conf import settings
 from django.conf.urls.static import static
 from accounts import views as account_views
 from datasets import views as datasets_views
+
 urlpatterns = [
     path('', datasets_views.redirect_to_dataset_list),
     #datasets
@@ -36,9 +36,8 @@ urlpatterns = [
     path('admin/', admin.site.urls, name='admin'),
 
 
-    path('neural_network', neural_network_views.model_list, name='model_list'),
-    path('neural_network/create/', neural_network_views.model_create, name='model_create'),
-    path('neural_network/<int:pk>/', neural_network_views.model_detail, name='model_detail'),
+    #neural network
+    path('neural_network/', include('neural_network.urls')),
 
     #learning
     path('learning/', include('learning.urls')),
@@ -49,7 +48,7 @@ urlpatterns = [
 
     #accounts
     #path('register/', account_views.register_view, name='register'),
-    path('datasets/login/', account_views.login_view, name='login'),
+    path('login/', account_views.login_view, name='login'),
     path('logout/', account_views.logout_view, name='logout'),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
