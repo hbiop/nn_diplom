@@ -20,10 +20,8 @@ from django.urls import path, include
 from datasets import views as datasets_views
 from neural_network import views as neural_network_views
 
-from predict import views as predict_views
 from django.conf import settings
 from django.conf.urls.static import static
-from predict.views import PredictionSessionDetailView, start_prediction_view
 from accounts import views as account_views
 
 urlpatterns = [
@@ -47,10 +45,7 @@ urlpatterns = [
 
 
     #predictions
-    path('predictions/', predict_views.sessions_list, name='predict_sessions_list'),
-    path('predictions/create', predict_views.create_session, name='create_session'),
-    path('predictions/<int:pk>/', PredictionSessionDetailView.as_view(), name='prediction_detail'),
-    path('predictions/<int:pk>/start/', start_prediction_view, name='start_prediction'),
+    path('predicting/', include('predict.urls')),
 
     #accounts
     #path('register/', account_views.register_view, name='register'),

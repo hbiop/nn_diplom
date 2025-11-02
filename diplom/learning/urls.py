@@ -1,5 +1,6 @@
 from django.urls import path
 from learning import views as learning_views
+
 urlpatterns = [
     path('sessions/', learning_views.sessions_list, name='session_list'),
     path('sessions/create', learning_views.create_session, name='create_session_list'),
