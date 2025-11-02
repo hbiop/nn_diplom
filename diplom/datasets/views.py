@@ -62,4 +62,4 @@ def dataset_list(request):
 
 
 def redirect_to_dataset_list(request):
-    return redirect('login/')
+    return redirect('login')
