@@ -1,11 +1,10 @@
-import pickle
-import threading
 
 import pandas as pd
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_GET
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import DetailView
 
 from predict.models import PredictSession
@@ -24,24 +23,29 @@ def sessions_list(request):
     sessions = PredictSession.objects.filter(user=request.user).order_by('-creation_date')
     return render(request, 'predictions/list.html', {'sessions': sessions})
 
+@login_required
 def create_session(request):
     if request.method == 'POST':
-        form = PredictSessionForm(request.POST)
+        form = PredictSessionForm(request.POST, user=request.user)
         if form.is_valid():
-            training_session = form.save()
+            training_session = form.save(commit=False)
             training_session.user = request.user
             training_session.save()
             return redirect('predict_sessions_list')
     else:
-        form = PredictSessionForm()
+        form = PredictSessionForm(user=request.user)
 
     return render(request, "predictions/upload_session.html", {"form": form})
 
 
-class PredictionSessionDetailView(DetailView):
+class PredictionSessionDetailView(LoginRequiredMixin, DetailView):
+    login_url = 'login'
     model = PredictSession
     template_name = 'predictions/prediction_detail.html'
     context_object_name = 'session'
+
+    def get_queryset(self):
+        return PredictSession.objects.filter(user=self.request.user)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -61,8 +65,9 @@ class PredictionSessionDetailView(DetailView):
         return context
 
 
+@login_required
 def start_prediction_view(request, pk):
-    session = get_object_or_404(PredictSession, pk=pk)
+    session = get_object_or_404(PredictSession, pk=pk, user=request.user)
 
     # Запускаем только если сессия не выполняется
     if session.status != 'running':

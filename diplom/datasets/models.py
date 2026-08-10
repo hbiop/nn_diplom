@@ -14,8 +14,7 @@ class DataFile(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='datasets',
-        default=1
+        related_name='datasets'
     )
 
     title = models.CharField(max_length=255, verbose_name="Название набора")

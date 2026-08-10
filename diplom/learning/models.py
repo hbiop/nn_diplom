@@ -10,11 +10,11 @@ from django.urls import reverse
 from neural_network.models import MLModel
 
 
-import pickle
-import base64
 from django.db import models
 from django.utils import timezone
 from django.conf import settings
+
+from .secure_pickle import dumps as secure_dumps, loads as secure_loads
 
 
 class TrainingSession(models.Model):
@@ -29,8 +29,7 @@ class TrainingSession(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='learning',
-        default=1
+        related_name='learning'
     )
     model = models.ForeignKey(MLModel, on_delete=models.CASCADE)
     dataset = models.ForeignKey(DataFile, on_delete=models.CASCADE)
@@ -54,7 +53,7 @@ class TrainingSession(models.Model):
 
     def save_preprocessor(self, preprocessor):
         """Сериализация и сохранение препроцессора"""
-        serialized = pickle.dumps(preprocessor)
+        serialized = secure_dumps(preprocessor)
         self.preprocessor = serialized
         self.save()
 
@@ -62,11 +61,11 @@ class TrainingSession(models.Model):
         """Десериализация препроцессора"""
         if not self.preprocessor:
             return None
-        return pickle.loads(self.preprocessor)
+        return secure_loads(self.preprocessor)
 
     def save_neural_network(self, nn):
         """Сериализация и сохранение нейронной сети"""
-        serialized = pickle.dumps(nn)
+        serialized = secure_dumps(nn)
         self.neural_network = serialized
         self.save()
 
@@ -74,7 +73,7 @@ class TrainingSession(models.Model):
         """Десериализация нейронной сети"""
         if not self.neural_network:
             return None
-        return pickle.loads(self.neural_network)
+        return secure_loads(self.neural_network)
 
     def get_epoch_history(self):
         """Возвращает историю эпох в виде списка словарей"""

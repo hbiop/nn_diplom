@@ -6,23 +6,26 @@ from .forms import DataFileForm
 from .models import DataFile
 
 
+@login_required
 def upload_dataset(request):
     if request.method == 'POST':
         form = DataFileForm(request.POST, request.FILES)
         if form.is_valid():
             try:
-                data_file = form.save()
+                data_file = form.save(commit=False)
                 data_file.user = request.user
+                data_file.save()
                 file_path = data_file.file.path
                 if data_file.file_type == 'CSV':
                     df = pd.read_csv(file_path)
                 elif data_file.file_type == 'XLSX':
                     df = pd.read_excel(file_path)
-                data_file.save()
                 messages.success(request, 'Файл успешно загружен и обработан')
                 return redirect('dataset_detail', pk=data_file.pk)
 
             except Exception as e:
+                if 'data_file' in locals() and data_file.pk:
+                    data_file.delete()
                 messages.error(request, f'Ошибка обработки файла: {str(e)}')
     else:
         form = DataFileForm()
@@ -30,13 +33,15 @@ def upload_dataset(request):
     return render(request, 'datasets/upload.html', {'form': form})
 
 
+@login_required
 def delete_file(request, id):
-    file = get_object_or_404(DataFile, pk=id)
+    file = get_object_or_404(DataFile, pk=id, user=request.user)
     file.delete()
     return redirect('dataset_list')
 
+@login_required
 def dataset_detail(request, pk):
-    data_file = DataFile.objects.get(pk=pk)
+    data_file = get_object_or_404(DataFile, pk=pk, user=request.user)
     try:
         # Чтение данных для отображения
         if data_file.file_type == 'CSV':
@@ -62,4 +67,4 @@ def dataset_list(request):
 
 
 def redirect_to_dataset_list(request):
-    return redirect('login')
+    return redirect('dataset_list')

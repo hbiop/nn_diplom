@@ -21,8 +21,7 @@ class PredictSession(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='predictions',
-        default=1
+        related_name='predictions'
     )
     progress = models.FloatField(default=0)
     title = models.CharField(max_length=255, default="Новая сессия предсказаний")

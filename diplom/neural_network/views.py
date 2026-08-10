@@ -1,4 +1,3 @@
-import time
 
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -14,7 +13,9 @@ def model_list(request):
     return render(request, 'models/list.html', {'models': models})
 
 
+@login_required
 def model_create(request):
+    initial_layer = LayerForm(prefix='layer_0')
     if request.method == 'POST':
         form = MLModelForm(request.POST)
         layers = []
@@ -55,7 +56,6 @@ def model_create(request):
                 messages.error(request, 'Пожалуйста, исправьте ошибки в форме')
     else:
         form = MLModelForm()
-        initial_layer = LayerForm(prefix='layer_0')
 
     return render(request, 'models/create.html', {
         'form': form,
@@ -63,50 +63,32 @@ def model_create(request):
     })
 
 
+@login_required
 def model_detail(request, pk):
-    model = get_object_or_404(MLModel, pk=pk)
+    model = get_object_or_404(MLModel, pk=pk, user=request.user)
     return render(request, 'models/detail.html', {'model': model})
 
 
 
 
+@login_required
 def model_train(request, pk):
-    model = get_object_or_404(MLModel, pk=pk)
+    model = get_object_or_404(MLModel, pk=pk, user=request.user)
 
     if request.method == 'POST':
-        model.status = 'training'
-        model.save()
-        from threading import Thread
-        Thread(target=train_model, args=(model,)).start()
-
+        messages.info(
+            request,
+            'Обучение запускается из раздела сессий обучения после выбора датасета.'
+        )
         return redirect('model_train', pk=pk)
 
     return render(request, 'models/train.html', {'model': model})
 
 
-# def train_model(model):
-#     try:
-#         start_time = time.time()
-#
-#         for epoch in range(1, 6):
-#             time.sleep(2)  # Имитация обучения
-#             model.training_log = f"Epoch {epoch}/5 completed\n"
-#             model.save()
-#
-#         model.accuracy = 0.92  # Пример метрики
-#         model.training_time = time.time() - start_time
-#         model.status = 'completed'
-#         model.training_log += "\nОбучение успешно завершено!"
-#
-#     except Exception as e:
-#         model.status = 'failed'
-#         model.training_log = f"Ошибка: {str(e)}"
-#
-#     model.save()
 
-
+@login_required
 def training_progress(request, pk):
-    model = get_object_or_404(MLModel, pk=pk)
+    model = get_object_or_404(MLModel, pk=pk, user=request.user)
     return JsonResponse({
         'status': model.get_status_display(),
         'log': model.training_log,

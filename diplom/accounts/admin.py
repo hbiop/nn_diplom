@@ -2,10 +2,12 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
 from .models import CustomUser
+from .forms import CustomUserCreationForm
 from django.utils.translation import gettext_lazy as _
 
 class CustomUserAdmin(UserAdmin):
     model = CustomUser
+    add_form = CustomUserCreationForm
     list_display = ('email', 'first_name', 'last_name', 'is_staff')
     fieldsets = (
         (None, {'fields': ('email', 'password')}),

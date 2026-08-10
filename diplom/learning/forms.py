@@ -7,6 +7,12 @@ from neural_network.models import MLModel
 
 
 class SessionForm(forms.ModelForm):
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if user is not None:
+            self.fields['model'].queryset = MLModel.objects.filter(user=user)
+            self.fields['dataset'].queryset = DataFile.objects.filter(user=user)
+
     class Meta:
         model = TrainingSession
         fields = ['title', 'model', 'dataset', 'epochs', 'learning_rate']

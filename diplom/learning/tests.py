@@ -3,6 +3,10 @@ import pandas as pd
 from django.test import TestCase
 
 from learning.data_preprocessor import DataPreprocessor
+from learning.secure_pickle import RestrictedUnpickler, dumps, loads
+
+import io
+import pickle
 
 
 # Create your tests here.
@@ -17,6 +21,28 @@ class TestDataPreprocessing(TestCase):
             'target': ['cat', 'dog', 'cat', 'dog', 'bird', 'cat', 'dog', 'bird', 'cat', 'dog']
         }
         cls.df = pd.DataFrame(cls.sample_data)
+
+    def test_signed_preprocessor_round_trip(self):
+        processor = DataPreprocessor()
+        processor.automatic_preprocess_data(self.df, 'target')
+
+        restored = loads(dumps(processor))
+
+        self.assertIsInstance(restored, DataPreprocessor)
+        self.assertEqual(list(restored.classes), list(processor.classes))
+
+    def test_tampered_artifact_is_rejected(self):
+        artifact = bytearray(dumps({'safe': True}))
+        artifact[-1] ^= 1
+
+        with self.assertRaises(ValueError):
+            loads(artifact)
+
+    def test_unapproved_global_is_rejected(self):
+        payload = pickle.dumps(ValueError('not allowed'))
+
+        with self.assertRaises(pickle.UnpicklingError):
+            RestrictedUnpickler(io.BytesIO(payload)).load()
 
     def test_automatic_preprocess_data(self):
         processor = DataPreprocessor()

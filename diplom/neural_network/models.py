@@ -14,8 +14,7 @@ class MLModel(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='mlmodels',
-        default=1
+        related_name='mlmodels'
     )
     class Meta:
         verbose_name = "Модель машинного обучения"
