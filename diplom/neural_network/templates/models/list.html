@@ -7,13 +7,19 @@
             <h2>Мои модели</h2>
             <div class="list-group">
                 {% for model in models %}
-                <a href="{{ model.get_absolute_url }}" class="list-group-item list-group-item-action">
+                <div class="list-group-item d-flex justify-content-between align-items-center gap-3">
+                <a href="{{ model.get_absolute_url }}" class="list-group-item-action text-decoration-none flex-grow-1">
                     <div class="d-flex w-100 justify-content-between">
                         <h5 class="mb-1">{{ model.title }}</h5>
                         <small>{{ model.creation_date|date:"d.m.Y H:i" }}</small>
                     </div>
                     <p class="mb-1">{{ model.description|truncatechars:100 }}</p>
                 </a>
+                <form method="post" action="{% url 'model_delete' model.pk %}" onsubmit="return confirm('Удалить эту модель и связанные сессии?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger btn-sm">Удалить</button>
+                </form>
+                </div>
                 {% empty %}
                 <div class="alert alert-info">Нет созданных моделей</div>
                 {% endfor %}

@@ -54,6 +54,8 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const sessionId = {{ session.id }};
+    const progressUrl = "{% url 'training_progress_api' session.id %}";
+    const cancelUrl = "{% url 'cancel_training' session.id %}";
     const progressBar = document.getElementById('training-progress');
     const progressText = document.getElementById('progress-text');
     const statusLabel = document.getElementById('training-status');
@@ -95,10 +97,26 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    function getCookie(name) {
+        const cookies = document.cookie ? document.cookie.split(';') : [];
+        for (const cookie of cookies) {
+            const [key, value] = cookie.trim().split('=');
+            if (key === name) {
+                return decodeURIComponent(value);
+            }
+        }
+        return '';
+    }
+
     // Функция обновления данных
     function updateTrainingProgress() {
-        fetch(`/api/training-progress/${sessionId}/`)
-            .then(response => response.json())
+        fetch(progressUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 // Обновляем прогресс бар
                 progressBar.style.width = `${data.progress}%`;
@@ -113,12 +131,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 logsElement.textContent = data.logs;
                 logsElement.scrollTop = logsElement.scrollHeight;
 
-                // Обновляем график
-                if (data.epoch_history) {
+                // История содержит контрольные точки: каждые 100 эпох и последнюю.
+                if (Array.isArray(data.epoch_history)) {
                     chart.data.labels = data.epoch_history.map(e => e.epoch_number);
                     chart.data.datasets[0].data = data.epoch_history.map(e => e.loss);
                     chart.data.datasets[1].data = data.epoch_history.map(e => e.accuracy);
-                    chart.update();
+                    chart.update('none');
                 }
 
                 // Управление кнопками
@@ -141,7 +159,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Обработчик отмены обучения
     cancelBtn.addEventListener('click', function() {
         if (confirm('Вы уверены, что хотите отменить обучение?')) {
-            fetch(`/api/cancel-training/${sessionId}/`, { method: 'POST' })
+            fetch(cancelUrl, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {

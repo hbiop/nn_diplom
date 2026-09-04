@@ -1,10 +1,3 @@
 {% extends "base_login.html" %}
-
-{% block content %}
-<h2 class="text-center mb-4">Регистрация</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
-</form>
-{% endblock %}
+{% block title %}Регистрация — DataLab{% endblock %}
+{% block content %}<h1>Создать аккаунт</h1><p class="subtitle">Начните работу с наборами данных и ML-моделями.</p><form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit" class="btn btn-primary btn-block mt-2">Зарегистрироваться</button></form>{% endblock %}

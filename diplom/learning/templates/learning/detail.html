@@ -6,24 +6,26 @@
     <p>Дата создания: {{ session.creation_date|date:"d.m.Y H:i" }}</p>
 
     <h3>Данные</h3>
-    <table class="table">
-        <thead>
-            <tr>
-                {% for column in columns %}
-                <th>{{ column }}</th>
+    <div class="data-table-wrapper" role="region" aria-label="Предпросмотр данных" tabindex="0">
+        <table class="table data-table">
+            <thead>
+                <tr>
+                    {% for column in columns %}
+                    <th>{{ column }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    {% for value in row.values %}
+                    <td>{{ value }}</td>
+                    {% endfor %}
+                </tr>
                 {% endfor %}
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in rows %}
-            <tr>
-                {% for value in row.values %}
-                <td>{{ value }}</td>
-                {% endfor %}
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    </div>
 
     <div class="card mb-4">
         <div class="card-header">
@@ -51,6 +53,12 @@
                 <a href="{% url 'session_list' %}" class="btn btn-outline-secondary btn-block mb-2">
                     ← Назад к списку
                 </a>
+                {% if session.status != 'running' %}
+                <form method="post" action="{% url 'delete_session' session.id %}" onsubmit="return confirm('Удалить эту сессию обучения?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger btn-block mb-2">Удалить сессию</button>
+                </form>
+                {% endif %}
 
                 <!-- Кнопка запуска обучения с обработкой через JavaScript -->
                 <button id="start-training-btn" class="btn btn-success btn-block"
@@ -85,17 +93,27 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
 
         // Отправляем AJAX запрос
-        fetch(`/start_training/${sessionId}/`, {
+        fetch("{% url 'start_training' session.id %}", {
             method: 'POST',
             headers: {
                 'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({})
         })
-        .then(response => response.json())
+        .then(async response => {
+            const contentType = response.headers.get('content-type') || '';
+            const data = contentType.includes('application/json')
+                ? await response.json()
+                : { message: `Сервер вернул ошибку (HTTP ${response.status})` };
+            if (!response.ok) {
+                throw new Error(data.message || `HTTP ${response.status}`);
+            }
+            return data;
+        })
         .then(data => {
-            if (data.status === 'Training started in background') {
+            if (data.status === 'queued') {
                 // Перенаправляем на страницу прогресса после успешного запуска
                 window.location.href = "{% url 'training_progress' session.id %}";
             } else {

@@ -31,6 +31,10 @@
                     <a href="{% url 'model_list' %}" class="btn btn-outline-secondary btn-block">
                         ← Назад к списку
                     </a>
+                    <form method="post" action="{% url 'model_delete' model.pk %}" onsubmit="return confirm('Удалить эту модель и связанные сессии?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger btn-block">Удалить модель</button>
+                    </form>
 
                 </div>
             </div>

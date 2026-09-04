@@ -3,6 +3,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, Http404
 from django.shortcuts import redirect, render
+from django.views.decorators.http import require_POST
 
 from .forms import MLModelForm, LayerForm
 from .selectors import get_user_model, list_user_models
@@ -50,6 +51,15 @@ def model_create(request):
 @login_required
 def model_detail(request, pk):
     return render(request, 'models/detail.html', {'model': _get_model(pk, request.user)})
+
+
+@login_required
+@require_POST
+def model_delete(request, pk):
+    model = _get_model(pk, request.user)
+    model.delete()
+    messages.success(request, 'Модель удалена')
+    return redirect('model_list')
 
 
 @login_required

@@ -12,6 +12,8 @@ from .secure_pickle import dumps as secure_dumps
 
 logger = logging.getLogger(__name__)
 
+CHECKPOINT_INTERVAL = 100
+
 
 @shared_task(bind=True, name='learning.train_session')
 def train_session(self, session_id):
@@ -75,35 +77,39 @@ def train_session(self, session_id):
                 np.mean(np.argmax(output, axis=1) == np.argmax(y_test, axis=1))
             )
 
-            TrainingEpoch.objects.update_or_create(
-                session=session,
-                epoch_number=epoch,
-                defaults={
-                    'loss': loss,
-                    'accuracy': accuracy,
-                    'learning_rate': session.learning_rate,
-                },
-            )
-
             if loss < best_loss:
                 best_loss = loss
                 best_weights = secure_dumps(nn)
                 session.best_loss = best_loss
                 session.final_accuracy = accuracy
 
-            session.current_epoch = epoch
-            session.progress = (epoch / session.epochs) * 100
-            session.logs += (
-                f'Эпоха {epoch}: loss={loss:.4f}, accuracy={accuracy:.4f}\n'
-            )
-            session.save(update_fields=[
-                'current_epoch', 'progress', 'logs',
-                'best_loss', 'final_accuracy',
-            ])
-            self.update_state(
-                state='PROGRESS',
-                meta={'current_epoch': epoch, 'progress': session.progress},
-            )
+            # Сохраняем состояние и точку для графика раз в 100 эпох.
+            # Последняя эпоха сохраняется всегда, даже если их меньше 100.
+            is_checkpoint = epoch % CHECKPOINT_INTERVAL == 0 or epoch == session.epochs
+            if is_checkpoint:
+                TrainingEpoch.objects.update_or_create(
+                    session=session,
+                    epoch_number=epoch,
+                    defaults={
+                        'loss': loss,
+                        'accuracy': accuracy,
+                        'learning_rate': session.learning_rate,
+                    },
+                )
+
+                session.current_epoch = epoch
+                session.progress = (epoch / session.epochs) * 100
+                session.logs += (
+                    f'Эпоха {epoch}: loss={loss:.4f}, accuracy={accuracy:.4f}\n'
+                )
+                session.save(update_fields=[
+                    'current_epoch', 'progress', 'logs',
+                    'best_loss', 'final_accuracy',
+                ])
+                self.update_state(
+                    state='PROGRESS',
+                    meta={'current_epoch': epoch, 'progress': session.progress},
+                )
 
         session.refresh_from_db(fields=['status'])
         if session.status == 'cancelled':

@@ -49,6 +49,12 @@
                 <div class="card-header">Действия</div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
+                        {% if session.status != 'running' %}
+                        <form method="post" action="{% url 'delete_prediction_session' session.id %}" onsubmit="return confirm('Удалить эту сессию предсказаний?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger btn-lg w-100">Удалить сессию</button>
+                        </form>
+                        {% endif %}
                         {% if session.status == 'pending' %}
                             <button id="start-prediction-btn"
                                     class="btn btn-success btn-lg"

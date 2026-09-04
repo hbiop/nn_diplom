@@ -64,6 +64,10 @@
                     <a href="{{ data_file.file.url }}" class="btn btn-success btn-block" download>
                         Скачать исходный файл
                     </a>
+                    <form method="post" action="{% url 'delete_file' data_file.id %}" onsubmit="return confirm('Удалить этот набор данных?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger btn-block">Удалить набор</button>
+                    </form>
                 </div>
             </div>
         </div>

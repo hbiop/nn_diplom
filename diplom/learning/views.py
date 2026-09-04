@@ -1,9 +1,12 @@
+import logging
+
 from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
+from kombu.exceptions import OperationalError
 
 from .forms import SessionForm
 from .selectors import get_epoch_history, get_user_session, list_user_sessions
@@ -13,6 +16,9 @@ from .services import (
     serialize_training_progress,
 )
 from .tasks import start_training
+
+
+logger = logging.getLogger(__name__)
 
 
 def _get_session(session_id, user):
@@ -58,9 +64,18 @@ def create_session(request):
 
 
 @login_required
+@require_POST
 def start_training_view(request, session_id):
     _get_session(session_id, request.user)
-    task = start_training(session_id)
+    try:
+        task = start_training(session_id)
+    except OperationalError:
+        logger.exception('Could not queue training session %s', session_id)
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Не удалось подключиться к очереди обучения. Проверьте Redis и Celery worker.',
+        }, status=503)
+
     return JsonResponse({
         'status': 'queued',
         'task_id': task.id,
@@ -83,6 +98,18 @@ def check_training_status(request, session_id):
 def training_progress(request, session_id):
     session = _get_session(session_id, request.user)
     return render(request, 'learning/training_progress.html', {'session': session})
+
+
+@login_required
+@require_POST
+def delete_session(request, session_id):
+    session = _get_session(session_id, request.user)
+    if session.status == 'running':
+        messages.error(request, 'Нельзя удалить активную сессию обучения')
+        return redirect('session_detail', pk=session_id)
+    session.delete()
+    messages.success(request, 'Сессия обучения удалена')
+    return redirect('session_list')
 
 
 @login_required

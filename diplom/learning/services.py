@@ -22,6 +22,8 @@ def serialize_training_progress(session, epoch_history):
     return {
         'status': session.status,
         'progress': session.progress,
+        'current_epoch': session.current_epoch,
+        'total_epochs': session.epochs,
         'logs': session.logs,
         'epoch_history': [
             {

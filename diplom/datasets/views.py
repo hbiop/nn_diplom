@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404
 from django.shortcuts import redirect, render
+from django.views.decorators.http import require_POST
 
 from .forms import DataFileForm
 from .selectors import get_user_dataset, list_user_datasets
@@ -31,6 +32,7 @@ def upload_dataset(request):
 
 
 @login_required
+@require_POST
 def delete_file(request, id):
     delete_dataset(_get_dataset(id, request.user))
     return redirect('dataset_list')

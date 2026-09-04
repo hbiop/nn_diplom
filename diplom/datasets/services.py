@@ -11,7 +11,10 @@ def create_dataset(*, form, user):
 
 
 def delete_dataset(data_file):
+    file_field = data_file.file
     data_file.delete()
+    if file_field:
+        file_field.delete(save=False)
 
 
 def read_dataset_preview(data_file, limit=100):

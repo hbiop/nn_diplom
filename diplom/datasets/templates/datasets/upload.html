@@ -1,10 +1,11 @@
 {% extends "base.html" %}
-
+{% block title %}Загрузка данных — DataLab{% endblock %}
+{% block header_title %}Новый набор данных{% endblock %}
 {% block content %}
-<h2>Загрузка нового набора данных</h2>
-<form method="post" enctype="multipart/form-data">
+<div class="page-heading"><div><h2>Загрузить данные</h2><p>Добавьте файл, чтобы использовать его в обучении модели.</p></div></div>
+<div class="row"><div class="col-xl-8"><div class="card"><div class="card-body"><form method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">Загрузить</button>
-</form>
+    {% for field in form %}<div class="mb-3"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.help_text %}<small class="d-block mt-1">{{ field.help_text }}</small>{% endif %}{% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}</div>{% endfor %}
+    <div class="d-flex gap-2 mt-4"><button type="submit" class="btn btn-primary">Загрузить файл</button><a href="{% url 'dataset_list' %}" class="btn btn-outline-secondary">Отмена</a></div>
+</form></div></div></div><div class="col-xl-4"><div class="card"><div class="card-body"><h5>Рекомендации</h5><ul class="text-muted ps-3 mb-0"><li class="mb-2">Используйте понятное название.</li><li class="mb-2">Проверьте структуру таблицы.</li><li>Убедитесь, что файл не содержит лишних данных.</li></ul></div></div></div></div>
 {% endblock %}

@@ -1,36 +1,33 @@
 {% extends "base.html" %}
-
+{% block title %}Наборы данных — DataLab{% endblock %}
+{% block header_title %}Наборы данных{% endblock %}
 {% block content %}
-<div class="container">
-    <div class="row">
-        <div class="col-md-8">
-            <h2>Мои наборы данных</h2>
-            <div class="list-group">
-                {% for dataset in datasets %}
-                <a href="{{ dataset.get_absolute_url }}" class="list-group-item list-group-item-action">
-                    <div class="d-flex w-100 justify-content-between">
-                        <h5 class="mb-1">{{ dataset.title }}</h5>
-                        <small>{{ dataset.upload_date|date:"d.m.Y H:i" }}</small>
-                    </div>
-                    <p class="mb-1">{{ dataset.description|truncatechars:100 }}</p>
-                    <small>Тип: {{ dataset.get_file_type_display }} | Размер: {{ dataset.get_file_size_mb }}</small>
-                </a>
-                {% empty %}
-                <div class="alert alert-info">Нет загруженных наборов данных</div>
-                {% endfor %}
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Действия</h5>
-                    <a href="{% url 'dataset_upload' %}" class="btn btn-primary btn-block">
-                        Загрузить новый набор данных
-                    </a>
+<div class="page-heading">
+    <div><h2>Ваши данные</h2><p>Файлы, которые используются для обучения и предсказаний.</p></div>
+    <a href="{% url 'dataset_upload' %}" class="btn btn-primary">＋ Загрузить набор</a>
+</div>
+<div class="row g-4">
+    <div class="col-xl-8">
+        <div class="list-group">
+            {% for dataset in datasets %}
+            <div class="list-group-item d-flex justify-content-between align-items-center gap-3">
+                <a href="{{ dataset.get_absolute_url }}" class="text-decoration-none flex-grow-1">
+                <div class="d-flex justify-content-between gap-3">
+                    <div><h5 class="mb-2">{{ dataset.title }}</h5><p class="mb-2 text-muted">{{ dataset.description|truncatechars:120 }}</p></div>
+                    <span class="text-muted text-nowrap">{{ dataset.upload_date|date:"d.m.Y" }}</span>
                 </div>
+                <small>{{ dataset.get_file_type_display }} <span class="mx-2">·</span> {{ dataset.get_file_size_mb }}</small>
+                </a>
+                <form method="post" action="{% url 'delete_file' dataset.id %}" onsubmit="return confirm('Удалить этот набор данных?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger btn-sm">Удалить</button>
+                </form>
             </div>
+            {% empty %}
+            <div class="card"><div class="card-body text-center py-5"><h5>Пока нет наборов данных</h5><p class="text-muted">Загрузите первый файл, чтобы начать работу.</p><a href="{% url 'dataset_upload' %}" class="btn btn-primary">Загрузить набор</a></div></div>
+            {% endfor %}
         </div>
     </div>
+    <div class="col-xl-4"><div class="card"><div class="card-body"><h5 class="mb-2">Быстрый старт</h5><p class="text-muted mb-4">Добавьте CSV или другой поддерживаемый файл и используйте его в ML-процессе.</p><a href="{% url 'dataset_upload' %}" class="btn btn-primary btn-block">＋ Новый набор данных</a></div></div></div>
 </div>
 {% endblock %}

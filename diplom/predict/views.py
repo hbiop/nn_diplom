@@ -1,8 +1,10 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404, JsonResponse
 from django.shortcuts import redirect, render
+from django.views.decorators.http import require_POST
 from django.views.generic import DetailView
 
 from .forms import PredictSessionForm
@@ -50,6 +52,21 @@ class PredictionSessionDetailView(LoginRequiredMixin, DetailView):
 
 
 @login_required
+@require_POST
+def delete_prediction_session(request, pk):
+    session = _get_session(pk, request.user)
+    if session.status == 'running':
+        messages.error(request, 'Нельзя удалить активную сессию предсказаний')
+        return redirect('prediction_detail', pk=pk)
+    result_file = session.results_file
+    session.delete()
+    if result_file:
+        result_file.delete(save=False)
+    return redirect('predict_sessions_list')
+
+
+@login_required
+@require_POST
 def start_prediction_view(request, pk):
     session = _get_session(pk, request.user)
     started = start_prediction_if_idle(session, start_prediction)
