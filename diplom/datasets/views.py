@@ -1,69 +1,58 @@
-import pandas as pd
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ObjectDoesNotExist
+from django.http import Http404
+from django.shortcuts import redirect, render
+
 from .forms import DataFileForm
-from .models import DataFile
+from .selectors import get_user_dataset, list_user_datasets
+from .services import create_dataset, delete_dataset, read_dataset_preview
+
+
+def _get_dataset(dataset_id, user):
+    try:
+        return get_user_dataset(dataset_id, user)
+    except ObjectDoesNotExist as error:
+        raise Http404 from error
 
 
 @login_required
 def upload_dataset(request):
-    if request.method == 'POST':
-        form = DataFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            try:
-                data_file = form.save(commit=False)
-                data_file.user = request.user
-                data_file.save()
-                file_path = data_file.file.path
-                if data_file.file_type == 'CSV':
-                    df = pd.read_csv(file_path)
-                elif data_file.file_type == 'XLSX':
-                    df = pd.read_excel(file_path)
-                messages.success(request, 'Файл успешно загружен и обработан')
-                return redirect('dataset_detail', pk=data_file.pk)
-
-            except Exception as e:
-                if 'data_file' in locals() and data_file.pk:
-                    data_file.delete()
-                messages.error(request, f'Ошибка обработки файла: {str(e)}')
-    else:
-        form = DataFileForm()
+    form = DataFileForm(request.POST or None, request.FILES or None)
+    if request.method == 'POST' and form.is_valid():
+        try:
+            data_file = create_dataset(form=form, user=request.user)
+            messages.success(request, 'Файл успешно загружен и обработан')
+            return redirect('dataset_detail', pk=data_file.pk)
+        except Exception as error:
+            messages.error(request, f'Ошибка обработки файла: {error}')
 
     return render(request, 'datasets/upload.html', {'form': form})
 
 
 @login_required
 def delete_file(request, id):
-    file = get_object_or_404(DataFile, pk=id, user=request.user)
-    file.delete()
+    delete_dataset(_get_dataset(id, request.user))
     return redirect('dataset_list')
+
 
 @login_required
 def dataset_detail(request, pk):
-    data_file = get_object_or_404(DataFile, pk=pk, user=request.user)
+    data_file = _get_dataset(pk, request.user)
+    context = {'data_file': data_file}
     try:
-        # Чтение данных для отображения
-        if data_file.file_type == 'CSV':
-            df = pd.read_csv(data_file.file.path)
-        elif data_file.file_type == 'XLSX':
-            df = pd.read_excel(data_file.file.path)
-
-        context = {
-            'data_file': data_file,
-            'columns': df.columns.tolist(),
-            'rows': df.to_dict('records')[:100],  # Первые 100 строк
-        }
-    except Exception as e:
-        messages.error(request, f'Ошибка чтения файла: {str(e)}')
-        context = {'data_file': data_file}
+        context.update(read_dataset_preview(data_file))
+    except Exception as error:
+        messages.error(request, f'Ошибка чтения файла: {error}')
 
     return render(request, 'datasets/detail.html', context)
 
+
 @login_required
 def dataset_list(request):
-    datasets = DataFile.objects.filter(user=request.user).order_by('-upload_date')
-    return render(request, 'datasets/list.html', {'datasets': datasets})
+    return render(request, 'datasets/list.html', {
+        'datasets': list_user_datasets(request.user),
+    })
 
 
 def redirect_to_dataset_list(request):
